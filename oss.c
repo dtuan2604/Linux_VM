@@ -28,7 +28,7 @@ int main(int argc, char** argv){
 	
 	if(MAX_PROCESS > MAX_PROC)
 		MAX_PROCESS = MAX_PROC;
-	printf("%d\n",num_proc);
+	printf("%d\n",MAX_PROCESS);
 
 
 	return EXIT_SUCCESS;
