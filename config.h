@@ -1,9 +1,27 @@
-#ifndef _CONFIG_H_
-#define _CONFIG_H_
+#ifndef _CONFIG_H
+#define _CONFIG_H
 
 
+
+#define BUFFER_LENGTH 4096
+#define MAX_FILE_LINE 100000
+
+
+
+#define TERMINATION_TIME 2
 #define MAX_PROC 18
+#define TOTAL_PROCESS 100
 
+
+#define PROCESS_SIZE 32000
+#define PAGE_SIZE 1000
+#define MAX_PAGE (PROCESS_SIZE / PAGE_SIZE)
+
+
+#define MEMORY_SIZE 256000
+#define FRAME_SIZE PAGE_SIZE
+#define MAX_FRAME (MEMORY_SIZE / FRAME_SIZE)
 
 
 #endif
+
