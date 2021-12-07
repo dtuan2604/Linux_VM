@@ -21,6 +21,59 @@ static struct sembuf sema_operation;
 
 static int pcbt_shmid = -1;
 static ProcessControlBlock *pcbt_shmptr = NULL;
+
+//invoke semaphore lock 
+static void ossSemWait(int sem_index)
+{
+	sema_operation.sem_num = sem_index;
+	sema_operation.sem_op = -1;
+	sema_operation.sem_flg = 0;
+	semop(semid, &sema_operation, 1);
+}
+//release semaphore lock of the given semaphore and index.
+static void ossSemRelease(int sem_index)
+{	
+	sema_operation.sem_num = sem_index;
+	sema_operation.sem_op = 1;
+	sema_operation.sem_flg = 0;
+	semop(semid, &sema_operation, 1);
+}
+
+static void initPCBT(ProcessControlBlock *pcbt)
+{
+	int i, j;
+	for(i = 0; i < MAX_PROCESS; i++)
+	{
+		pcbt[i].pidIndex = -1;
+		pcbt[i].actualPid = -1;
+		pcbt[i].ossIndex = -1;
+		for(j = 0; j < MAX_PAGE; j++)
+		{
+			pcbt[i].page_table[j].frameNo = -1;
+			pcbt[i].page_table[j].ref = rand() % 2;
+			pcbt[i].page_table[j].dirty = 0;
+			pcbt[i].page_table[j].valid = 0;
+		}
+	}		
+}
+
+//initialize process control block.
+static void initPCB(ProcessControlBlock *pcb, int ossID, int pindex, pid_t pid)
+{
+	int i;
+	pcb->pidIndex = pindex;
+	pcb->actualPid = pid;
+	pcb->ossIndex = ossID;
+
+	for(i = 0; i < MAX_PAGE; i++)
+	{
+		pcb->page_table[i].frameNo = -1;
+		pcb->page_table[i].ref = rand() % 2;
+		pcb->page_table[i].dirty = 0;
+		pcb->page_table[i].valid = 0;
+	}
+}
+
 static void initOSS()
 {
 	//initialize log file
