@@ -73,6 +73,21 @@ QNode *deQueue(Queue *q)
 	return temp;
 } 
 
+
+//checking if the queue is empty 
+bool isQueueEmpty(Queue *q)
+{
+	if(q->rear == NULL)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+
 //get string representation for queue
 char *getQueue(const Queue *q)
 {

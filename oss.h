@@ -27,7 +27,7 @@ typedef struct
 	long mtype;
 	int index;
 	pid_t childPid;
-	int flag;	//if the process is about to terminated
+	int flag;	//0 : isDone | 1 : isQueue
 	unsigned int address;
 	unsigned int requestPage;
 	char message[BUFFER_LENGTH];

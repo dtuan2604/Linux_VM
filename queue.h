@@ -21,6 +21,7 @@ Queue *createQueue();
 QNode *newQNode(int index);
 void enQueue(Queue* q, int index);
 QNode *deQueue(Queue *q);
+bool isQueueEmpty(Queue *q);
 char *getQueue(const Queue *q);
 
 #endif

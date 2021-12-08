@@ -1,16 +1,29 @@
-CC=gcc
-CFLAGS=-Wall -Werror -O2 -g
-OBJ= oss.o user.o
-DEPS= oss.c user.c
+CC         = gcc
+CFLAGS     = -Wall -g
 
-all: oss user
+STANDARD   = config.h oss.h
+SRC        = helper.h queue.h linkedlist.h
 
-%.o: %.c $(DEPS)
-	$(CC) $(CFLAGS) -c -o $@ $<
-oss: $(OBJ)
-	$(CC) $(CFLAGS) -lm -o $@ $@.o
+OBJ        = helper.o queue.o linkedlist.o
+MASTER_OBJ = oss.o
+USER_OBJ   = user.o
 
-user: $(OBJ)
-	$(CC) $(CFLAGS) -lm -o $@ $@.o
+MASTER     = oss
+USER       = user
+
+OUTPUT    = $(MASTER) $(USER)
+all: $(OUTPUT)
+
+
+%.o: %.c $(STANDARD) $(SRC)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(MASTER): $(MASTER_OBJ) $(OBJ)
+	$(CC) $(CFLAGS) $(MASTER_OBJ) $(OBJ) -o $(MASTER)
+
+$(USER): $(USER_OBJ)
+	$(CC) $(CFLAGS) $(USER_OBJ) -o $(USER)
+
 clean:
-	rm -rf oss user *.log *.o 
+	rm $(OUTPUT) *.o *.txt
+
