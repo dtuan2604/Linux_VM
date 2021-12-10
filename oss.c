@@ -1,14 +1,36 @@
+#include <stdlib.h>     
+#include <stdio.h>      
+#include <stdbool.h>    
+#include <stdint.h>     
+#include <string.h>     
+#include <unistd.h>     
+#include <stdarg.h>     
+#include <errno.h>      
+#include <signal.h>     
+#include <sys/ipc.h>    
+#include <sys/msg.h>    
+#include <sys/shm.h>    
+#include <sys/sem.h>    
+#include <sys/time.h>   
+#include <sys/types.h>  
+#include <sys/wait.h>   
+#include <time.h>       
 #include "config.h"
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include "oss.h"
+#include "queue.h"
+#include "linkedlist.h"
+
+
 
 
 static FILE *fptr = NULL;
 static char *prog;
 static char log_file[256] = "output.txt";
+static Queue *queue;
+static SharedClock forkclock;
 static int MAX_PROCESS = MAX_PROC;
 static char debugMode = false;
+
 
 static int mqueueid = -1;
 static Message master_message;
@@ -23,8 +45,20 @@ static struct sembuf sema_operation;
 static int pcbt_shmid = -1;
 static ProcessControlBlock *pcbt_shmptr = NULL;
 
+
 static int fork_number = 0;
 static pid_t pid = -1;
+
+
+
+
+static int memoryaccess_number = 0;
+static int pagefault_number = 0;
+static unsigned int total_access_time = 0;
+static unsigned char main_memory[MAX_FRAME];
+static int last_frame = -1;
+static List *refString;
+
 
 //invoke semaphore lock 
 static void ossSemWait(int sem_index)
@@ -42,6 +76,25 @@ static void ossSemRelease(int sem_index)
 	sema_operation.sem_flg = 0;
 	semop(semid, &sema_operation, 1);
 }
+//increment the logical clock in safe way
+static int incShmclock(int increment)
+{
+	ossSemWait(0);
+	int nano = (increment > 0) ? increment : rand() % 1000 + 1;
+
+	forkclock.nanosecond += nano; 
+	shmclock_shmptr->nanosecond += nano;
+
+	while(shmclock_shmptr->nanosecond >= 1000000000)
+	{
+		shmclock_shmptr->second++;
+		shmclock_shmptr->nanosecond = abs(1000000000 - shmclock_shmptr->nanosecond);
+	}
+
+	ossSemRelease(0);
+	return nano;
+}
+
 //print message to console and write to a file.
 static void printWrite(FILE *fptr, char *fmt, ...)
 {
@@ -126,11 +179,49 @@ static void timer(int seconds)
 		perror("ERROR");
 	}
 }
+
+static void printMainMemory()
+{
+	int i, j, k, found;
+	ossSemWait(0);
+
+	printWrite(fptr,"\tCurrent memory layout at time %d:%d\n",shmclock_shmptr->second, shmclock_shmptr->nanosecond);
+	printWrite(fptr,"\t\tOccupied\tDirty Bit\n");
+	for(i =0; i < MAX_FRAME; i++)
+	{
+		uint32_t frame = main_memory[i / 8] & (1 << (i % 8));
+		found = 0;
+		printWrite(fptr,"Frame %3d:\t",i);
+		if(frame != 0)
+			printWrite(fptr,"Yes\t\t");
+		else	
+			printWrite(fptr,"No\t\t");
+		for(j = 0; j < MAX_PROCESS; j++)
+		{
+			for(k = 0; k < MAX_PAGE; k++)
+			{
+				if(pcbt_shmptr[j].page_table[k].frameNo == i)
+				{
+					printWrite(fptr,"%d\n",pcbt_shmptr[j].page_table[k].dirty);
+					found = 1;
+					break;
+				}
+			}
+			if(found)
+				break;
+		}
+		if(!found)
+			printWrite(fptr,"0\n");
+	}
+
+	ossSemRelease(0);
+}
 //interrupt handling
 static void masterHandler(int signum)
 {
 	fprintf(stderr,"%s: got interrupted. Finishing report and exiting...\n",prog);
-	
+
+	printMainMemory();
 	killAllChild();
 
 	double avgMem = (double)memoryaccess_number / (double)shmclock_shmptr->second;
@@ -201,6 +292,7 @@ static void masterInterrupt(int seconds)
 	signal(SIGSEGV, segHandler);
 }
 
+//init process control block table
 static void initPCBT(ProcessControlBlock *pcbt)
 {
 	int i, j;
@@ -305,9 +397,21 @@ static void initOSS()
 		cleanUp();
 		exit(EXIT_FAILURE);	
 	}
+
+	//init process control block table variable
+	initPCBT(pcbt_shmptr);
+
+
+	//set up queue
+	queue = createQueue();
+	refString = createList();
+
+	//set up signal handling
+	masterInterrupt(TERMINATION_TIME);
 }
 
-int main(int argc, char** argv){
+int main(int argc, char *argv[]) 
+{
 	prog = argv[0];
 	srand(getpid());
 
@@ -332,6 +436,7 @@ int main(int argc, char** argv){
 	unsigned char bitmap[MAX_PROCESS];
 
 	initOSS();
+	printMainMemory();
 
 	if(debugMode)
 	{
@@ -660,6 +765,12 @@ int main(int argc, char** argv){
 			bitmap[return_index / 8] &= ~(1 << (return_index % 8));
 		}
 
+		if(shmclock_shmptr->second - clockCounter >= 1)
+		{
+			printMainMemory();
+			clockCounter = shmclock_shmptr->second;
+		}
+
 		//end the infinite loop when reached maximum process
 		if(fork_number >= TOTAL_PROCESS)
 		{
@@ -671,3 +782,5 @@ int main(int argc, char** argv){
 
 	return EXIT_SUCCESS; 
 }
+
+

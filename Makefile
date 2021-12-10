@@ -1,10 +1,10 @@
 CC         = gcc
 CFLAGS     = -Wall -g
 
-STANDARD   = config.h oss.h
-SRC        = helper.h queue.h linkedlist.h
+STANDARD   = oss.h config.h 
+SRC        = queue.h linkedlist.h helper.h 
 
-OBJ        = helper.o queue.o linkedlist.o
+OBJ        = queue.o linkedlist.o helper.o 
 MASTER_OBJ = oss.o
 USER_OBJ   = user.o
 

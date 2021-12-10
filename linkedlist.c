@@ -18,7 +18,6 @@ LNode *newLNode(int index, int page, int frame)
     temp->next = NULL;
     return temp;
 }
-
 //create a empty linked list
 List *createList()
 {
@@ -26,6 +25,9 @@ List *createList()
 	l->front = NULL;
 	return l;
 }
+
+
+
 
 //add an index, page, and frame to given linked list.
 void addListElement(List *l, int index, int page, int frame)
@@ -46,6 +48,8 @@ void addListElement(List *l, int index, int page, int frame)
 	next->next = temp;
 }
 
+
+
 //remove the first element from given linked list.
 void deleteListFirst(List *l) 
 {
@@ -58,6 +62,7 @@ void deleteListFirst(List *l)
     l->front = l->front->next;
     free(temp);
 }
+
 
 //remove a specific index, page, and frame from given linked list.
 int deleteListElement(List *l, int index, int page, int frame)
