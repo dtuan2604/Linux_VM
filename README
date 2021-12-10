@@ -18,7 +18,8 @@ Date: 		12/09/2021
 
 ## How to run the program
 	> make
-	> ./oss
+	> ./oss [-p t]
+		-p:	Indicate how many processes running at a time (maximum number is 18)
 
 ## Remove all executables and object files
 	make clean
