@@ -1,0 +1,49 @@
+#Project 3: Resource Management
+
+
+Name:		Duong Tuan Hoang
+Section: 	CMPSCI 4760 - Operating System
+VCS: 		git
+Date: 		12/09/2021
+
+##Files
+	oss.c - the operating system program
+	user.c - the user application program
+	oss.h - header file containing data structures used in this project
+	config.h - header file containing constants
+	helper.h, helper.h - define a helper function to use in multiple programs
+	queue.h, queue.c - define queue data structure
+	linkedlist.h, linkedlist.c - define linked list data structure
+	makefile
+
+## How to run the program
+	> make
+	> ./oss
+
+## Remove all executables and object files
+	make clean
+
+## Description
+	oss.c:
+		> oss.c stimulates a memory management module for our operating system. It uses FIFO page replacement algorithms.
+		> When a page-fault occurs, it will be necessary to swap in that page. If there are no empty frames, oss.c will 
+		select a victim fram based on the FIFO replacement theory. The dirty bit will also be implemented as a part of
+		the page table.
+		> oss.c will fork multiple children at random time stimulated by a logical clock that will be updated by oss.c. 
+		> In the beginning, oss.c allocates shared memory for system data structure, generate message queue and semaphore.
+		The system has a total memory of 256K, each process will have 32K page table.
+		> oss.c will monitor all memory references from user processes and if the reference results in a page fault, the user
+		process will be suspended till the page has been brought in. If there is no page fault, oss.c just increments the 
+		clock by 10 seconds. In case of page fault, the request is queued for the device and the process to the device.
+		> Each request for disk read/write takes about 14ms to be fulfilled.
+		oss.c also log to the file whenever a user process terminates. Every 1 sec passed, oss.c also print the current 
+		states of main memory.
+	user.c:
+		> Each user process generates memory references to one of its locations.
+		> When a process needs to generate an address to request, it simply generates a random value from 0 to the limit of 
+		the pages that process would have acces to (32). Multiply that page number by 1024 and then add a random offset of 
+		from 0 to 1023 to get the actual memory address requested.
+		> User process determine if it wants to write or read on the memory based on random number bias towards reading. 
+		After user process has every necessary information, it sends the message back to oss.c and wait for the respond
+		> Every 1000 memory references, the user process will check if it should terminate. If so, all its memory will be 
+		returned to oss and oss will inform its termination
